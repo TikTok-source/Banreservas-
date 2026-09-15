@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <title>Verificación</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                   "SF Pro Text", Arial, sans-serif;
+    }
+
+    /* Pantalla de Face ID */
+    #face-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      background: #000;
+      transition: opacity .45s ease;
+    }
+
+    /* Panel */
+    .face-panel {
+      width: calc(100% - 48px);
+      max-width: 550px;
+
+      padding: 32px 28px 26px;
+
+      border-radius: 38px;
+
+      background: rgba(245, 245, 245, .88);
+
+      backdrop-filter: blur(35px);
+      -webkit-backdrop-filter: blur(35px);
+
+      box-shadow:
+        0 20px 60px rgba(0,0,0,.45),
+        inset 0 1px 1px rgba(255,255,255,.75);
+
+      text-align: left;
+
+      animation: panelIn .45s ease-out;
+    }
+
+    @keyframes panelIn {
+      from {
+        opacity: 0;
+        transform: scale(.94);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Icono Face ID */
+    .face-icon {
+      width: 108px;
+      height: 108px;
+      margin: 0 auto 24px;
+
+      position: relative;
+    }
+
+    .corner {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border-color: #007aff;
+      border-style: solid;
+      border-width: 0;
+      border-radius: 8px;
+    }
+
+    .corner.tl {
+      left: 8px;
+      top: 8px;
+      border-left-width: 4px;
+      border-top-width: 4px;
+    }
+
+    .corner.tr {
+      right: 8px;
+      top: 8px;
+      border-right-width: 4px;
+      border-top-width: 4px;
+    }
+
+    .corner.bl {
+      left: 8px;
+      bottom: 8px;
+      border-left-width: 4px;
+      border-bottom-width: 4px;
+    }
+
+    .corner.br {
+      right: 8px;
+      bottom: 8px;
+      border-right-width: 4px;
+      border-bottom-width: 4px;
+    }
+
+    .face-outline {
+      position: absolute;
+      left: 31px;
+      top: 25px;
+      width: 46px;
+      height: 58px;
+
+      border: 4px solid #007aff;
+      border-radius: 48% 48% 45% 45%;
+      border-top-color: transparent;
+      border-bottom-color: #007aff;
+    }
+
+    .eye {
+      position: absolute;
+      top: 43px;
+
+      width: 6px;
+      height: 6px;
+
+      border-radius: 50%;
+      background: #007aff;
+    }
+
+    .eye.left {
+      left: 43px;
+    }
+
+    .eye.right {
+      right: 43px;
+    }
+
+    .nose {
+      position: absolute;
+      top: 52px;
+      left: 51px;
+
+      width: 6px;
+      height: 14px;
+
+      border-left: 3px solid #007aff;
+      border-bottom: 3px solid #007aff;
+      border-radius: 0 0 0 5px;
+    }
+
+    .smile {
+      position: absolute;
+      left: 43px;
+      top: 67px;
+
+      width: 23px;
+      height: 11px;
+
+      border-bottom: 3px solid #007aff;
+      border-radius: 0 0 50% 50%;
+    }
+
+    /* Texto */
+    .title {
+      margin: 0 0 8px;
+
+      font-size: 25px;
+      line-height: 1.15;
+      font-weight: 700;
+
+      color: #000;
+    }
+
+    .subtitle {
+      margin: 0 0 28px;
+
+      font-size: 21px;
+      line-height: 1.2;
+      font-weight: 500;
+
+      color: #333;
+    }
+
+    /* Botón azul */
+    .retry {
+      width: 100%;
+      height: 62px;
+
+      border: 0;
+      border-radius: 32px;
+
+      background: #007aff;
+      color: white;
+
+      font-size: 20px;
+      font-weight: 700;
+
+      box-shadow:
+        inset 0 1px 1px rgba(255,255,255,.25),
+        0 4px 12px rgba(0,122,255,.25);
+
+      margin-bottom: 12px;
+    }
+
+    /* Botón cancelar */
+    .cancel {
+      width: 100%;
+      height: 62px;
+
+      border: 0;
+      border-radius: 32px;
+
+      background: rgba(190,190,190,.55);
+      color: #000;
+
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    /* Estado reconocido */
+    .recognized .face-icon {
+      animation: success .45s ease;
+    }
+
+    @keyframes success {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.12);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .recognized .face-outline,
+    .recognized .corner,
+    .recognized .eye,
+    .recognized .nose,
+    .recognized .smile {
+      border-color: #34c759;
+    }
+
+    .recognized .eye {
+      background: #34c759;
+    }
+
+    /* Imagen final */
+    #final-image {
+      position: fixed;
+      inset: 0;
+
+      width: 100%;
+      height: 100%;
+
+      display: none;
+
+      object-fit: contain;
+
+      background: #fff;
+    }
+
+    #final-image.show {
+      display: block;
+
+      animation: imageIn .45s ease;
+    }
+
+    @keyframes imageIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- SIMULACIÓN VISUAL DE FACE ID -->
+  <div id="face-screen">
+
+    <div class="face-panel" id="face-panel">
+
+      <div class="face-icon">
+
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+
+        <div class="face-outline"></div>
+
+        <div class="eye left"></div>
+        <div class="eye right"></div>
+
+        <div class="nose"></div>
+        <div class="smile"></div>
+
+      </div>
+
+      <h1 class="title" id="title">
+        Reconociendo Face ID
+      </h1>
+
+      <p class="subtitle" id="subtitle">
+        Mira hacia la pantalla
+      </p>
+
+      <button class="retry" id="retry">
+        Face ID
+      </button>
+
+      <button class="cancel" id="cancel">
+        Cancelar
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- IMAGEN QUE APARECERÁ DESPUÉS -->
+  <img
+    id="final-image"
+    src="./icon.png.PNG"
+    alt=""
+  >
+
+  <script>
+    const faceScreen = document.getElementById("face-screen");
+    const facePanel = document.getElementById("face-panel");
+    const title = document.getElementById("title");
+    const subtitle = document.getElementById("subtitle");
+    const retry = document.getElementById("retry");
+    const cancel = document.getElementById("cancel");
+    const finalImage = document.getElementById("final-image");
+
+    function reconocer() {
+
+      title.textContent = "Reconociendo Face ID";
+      subtitle.textContent = "Mira hacia la pantalla";
+
+      retry.style.display = "none";
+      cancel.style.display = "none";
+
+      /*
+       * Simulación del reconocimiento.
+       * No utiliza ni accede al Face ID real.
+       */
+      setTimeout(() => {
+
+        facePanel.classList.add("recognized");
+
+        title.textContent = "Cara reconocida";
+        subtitle.textContent = "Face ID comprobado";
+
+      }, 2200);
+
+      /*
+       * Después de reconocer la cara,
+       * esperamos un momento y mostramos la imagen.
+       */
+      setTimeout(() => {
+
+        faceScreen.style.opacity = "0";
+
+        setTimeout(() => {
+
+          faceScreen.style.display = "none";
+
+          finalImage.classList.add("show");
+
+        }, 450);
+
+      }, 3500);
+    }
+
+    /* Iniciar automáticamente */
+    window.addEventListener("load", () => {
+      reconocer();
+    });
+
+    /* Botón cancelar */
+    cancel.addEventListener("click", () => {
+      faceScreen.style.opacity = "0";
+
+      setTimeout(() => {
+        faceScreen.style.display = "none";
+        finalImage.classList.add("show");
+      }, 450);
+    });
+
+    /* Si se pulsa Face ID, comienza nuevamente */
+    retry.addEventListener("click", () => {
+      reconocer();
+    });
+  </script>
+
+</body>
+</html>
